@@ -1,0 +1,311 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Synced assistant settings, custom wake word, privacy/battery preferences, and cross-device behavioral context.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the profile owner."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "User display name."
+        },
+        "wakeWord": {
+          "type": "string",
+          "description": "Custom wake word phrase (e.g., Hey Aura)."
+        },
+        "offlineVoicePreferred": {
+          "type": "boolean",
+          "description": "Whether on-device offline speech recognition and local command routing are preferred."
+        },
+        "autoReadReplies": {
+          "type": "boolean",
+          "description": "Whether Aura Assist automatically reads replies and identifications aloud via TTS."
+        },
+        "batteryMode": {
+          "type": "string",
+          "enum": ["ECO", "BALANCED", "RESPONSIVE"],
+          "description": "Power profile controlling wake-word polling duty cycle and memory budget."
+        },
+        "ttsSpeechRate": {
+          "type": "number",
+          "description": "Text-to-Speech speaking rate multiplier between 0.5 and 2.0."
+        },
+        "lastDeviceName": {
+          "type": "string",
+          "description": "Most recently synced phone or desktop device label."
+        },
+        "lastLocationLabel": {
+          "type": "string",
+          "description": "Optional coarse city/neighborhood context label."
+        },
+        "recentTopics": {
+          "type": "array",
+          "description": "Bounded list (max 10) of recent behavioral interest tags for contextual suggestions."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp written via FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp written via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "userId",
+        "displayName",
+        "wakeWord",
+        "offlineVoicePreferred",
+        "autoReadReplies",
+        "batteryMode",
+        "ttsSpeechRate",
+        "lastDeviceName",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "AssistantMessage": {
+      "title": "AssistantMessage",
+      "description": "A single turn in the user's cross-device synced assistant timeline (voice, text, Circle-to-Identify vision, or offline command).",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Owner Firebase Auth UID."
+        },
+        "role": {
+          "type": "string",
+          "enum": ["USER", "ASSISTANT", "SYSTEM"],
+          "description": "Message author role."
+        },
+        "content": {
+          "type": "string",
+          "description": "Message body text."
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["VOICE", "TEXT", "VISION", "OFFLINE", "AUTOMATION"],
+          "description": "Modality used to generate or capture this message."
+        },
+        "deviceName": {
+          "type": "string",
+          "description": "Device where the interaction originated."
+        },
+        "locationContext": {
+          "type": "string",
+          "description": "Optional coarse location context at the time of interaction."
+        },
+        "visualTag": {
+          "type": "string",
+          "description": "Optional identified object label from Circle-to-Identify."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp written via FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp written via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "userId",
+        "role",
+        "content",
+        "mode",
+        "deviceName",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "TaskAutomation": {
+      "title": "TaskAutomation",
+      "description": "A real-time task automation routine triggered by voice phrase or contextual suggestion.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Owner Firebase Auth UID."
+        },
+        "title": {
+          "type": "string",
+          "description": "Human-readable routine name."
+        },
+        "triggerPhrase": {
+          "type": "string",
+          "description": "Natural-language voice phrase that invokes this routine."
+        },
+        "actionType": {
+          "type": "string",
+          "enum": ["ALARM", "TIMER", "WHATSAPP", "MAPS", "BRIEFING", "WEB_SEARCH"],
+          "description": "Action handler executed on Android."
+        },
+        "actionPayload": {
+          "type": "string",
+          "description": "Target parameter (e.g., time, destination, WhatsApp template, search query)."
+        },
+        "contextHint": {
+          "type": "string",
+          "description": "Optional behavioral/location trigger hint (e.g., Morning Commute, At Work)."
+        },
+        "enabled": {
+          "type": "boolean",
+          "description": "Whether this routine is active."
+        },
+        "runCount": {
+          "type": "integer",
+          "description": "Number of times this routine has been executed."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp written via FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp written via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "userId",
+        "title",
+        "triggerPhrase",
+        "actionType",
+        "actionPayload",
+        "enabled",
+        "runCount",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "MessageDraft": {
+      "title": "MessageDraft",
+      "description": "A WhatsApp message draft or incoming message saved for hands-free read-aloud and cross-device sync.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Owner Firebase Auth UID."
+        },
+        "recipientName": {
+          "type": "string",
+          "description": "Recipient or sender display name."
+        },
+        "recipientPhone": {
+          "type": "string",
+          "description": "Optional phone number with country code for direct WhatsApp deep-link."
+        },
+        "body": {
+          "type": "string",
+          "description": "Drafted WhatsApp message or received message text."
+        },
+        "tone": {
+          "type": "string",
+          "enum": ["CASUAL", "PROFESSIONAL", "WARM", "CONCISE"],
+          "description": "Selected tone for AI message drafting."
+        },
+        "direction": {
+          "type": "string",
+          "enum": ["OUTGOING_DRAFT", "INCOMING_READER"],
+          "description": "Whether this entry is an outgoing WhatsApp draft or an incoming message to read aloud."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["DRAFT", "SENT", "READ"],
+          "description": "Lifecycle status of the draft or incoming message."
+        },
+        "summary": {
+          "type": "string",
+          "description": "Optional AI-generated hands-free summary."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp written via FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp written via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "userId",
+        "recipientName",
+        "body",
+        "tone",
+        "direction",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "TodoReminder": {
+      "title": "TodoReminder",
+      "description": "Synced to-do item, reminder, or calendar follow-up.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner Firebase Auth UID." },
+        "title": { "type": "string", "description": "Task or reminder title." },
+        "dueLabel": { "type": "string", "description": "Optional due date or time label." },
+        "category": { "type": "string", "enum": ["TASK", "REMINDER", "CALENDAR"], "description": "Productivity category." },
+        "completed": { "type": "boolean", "description": "Completion flag." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp." }
+      },
+      "required": ["userId", "title", "category", "completed", "createdAt", "updatedAt"]
+    },
+    "SmartHomeDevice": {
+      "title": "SmartHomeDevice",
+      "description": "Synced smart home device state (lights, locks, thermostats, vacuums, TVs).",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner Firebase Auth UID." },
+        "name": { "type": "string", "description": "Device display name." },
+        "room": { "type": "string", "description": "Room label." },
+        "deviceType": { "type": "string", "enum": ["LIGHT", "LOCK", "THERMOSTAT", "VACUUM", "TV"], "description": "Device type." },
+        "poweredOn": { "type": "boolean", "description": "Active/locked/powered state." },
+        "level": { "type": "integer", "description": "Brightness percentage, temperature in Celsius, or volume." },
+        "statusText": { "type": "string", "description": "Human-readable live status." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp." }
+      },
+      "required": ["userId", "name", "room", "deviceType", "poweredOn", "level", "statusText", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Authenticated user's assistant preferences, wake word, and cross-device sync state."
+    },
+    "/users/{userId}/conversations/{messageId}": {
+      "schema": { "$ref": "#/entities/AssistantMessage" },
+      "description": "User-scoped timeline of voice, text, offline, and Circle-to-Identify assistant interactions."
+    },
+    "/users/{userId}/automations/{automationId}": {
+      "schema": { "$ref": "#/entities/TaskAutomation" },
+      "description": "User-scoped task automation routines synced across devices."
+    },
+    "/users/{userId}/message_drafts/{draftId}": {
+      "schema": { "$ref": "#/entities/MessageDraft" },
+      "description": "User-scoped WhatsApp drafts and hands-free message reader items."
+    },
+    "/users/{userId}/todos/{todoId}": {
+      "schema": { "$ref": "#/entities/TodoReminder" },
+      "description": "User-scoped synced to-do lists and reminders."
+    },
+    "/users/{userId}/smart_devices/{deviceId}": {
+      "schema": { "$ref": "#/entities/SmartHomeDevice" },
+      "description": "User-scoped smart home devices and scene states."
+    }
+  }
+}

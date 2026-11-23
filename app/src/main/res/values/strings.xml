@@ -1,0 +1,24 @@
+<resources>
+    <string name="app_name">Aura Assist</string>
+    <string name="tagline">Ambient Gemini AI • Voice • Circle Vision • Sync</string>
+    <string name="sign_in_google">Sign in with Google</string>
+    <string name="nav_aura">Aura</string>
+    <string name="nav_circle">Circle</string>
+    <string name="nav_studio">Studio</string>
+    <string name="nav_comms">Comms</string>
+    <string name="nav_control">Control</string>
+    <string name="nav_automate">Automate</string>
+    <string name="cd_voice_orb">Activate voice assistant</string>
+    <string name="cd_settings">Open sync and wake word settings</string>
+    <string name="cd_send_message">Send message</string>
+    <string name="cd_speak_text">Read message aloud</string>
+    <string name="cd_stop_speaking">Stop reading aloud</string>
+    <string name="cd_pick_photo">Pick photo from gallery</string>
+    <string name="cd_take_photo">Capture photo with camera</string>
+    <string name="cd_sample_scene">Load sample desk scene</string>
+    <string name="cd_clear_circle">Clear circled selection</string>
+    <string name="cd_delete_item">Delete item</string>
+    <string name="cd_run_automation">Run task automation</string>
+    <string name="cd_hero_art">Aura Assist ambient light emblem</string>
+    <string name="cd_visual_canvas">Interactive image canvas for circling objects</string>
+</resources>

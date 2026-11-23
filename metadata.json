@@ -1,0 +1,6 @@
+{
+  "name": "Aura Assist",
+  "description": "An ambient Gemini-powered mobile AI assistant with custom wake word detection, offline/online voice recognition, real-time Circle-to-Identify visual analysis, contextual location-aware automations, hands-free WhatsApp message drafting and read-aloud, and cross-device cloud sync.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

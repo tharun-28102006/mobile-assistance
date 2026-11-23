@@ -1,0 +1,325 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Pillar 0: Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Global primitive helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidTimestamp(ts) {
+      return ts is timestamp && ts <= request.time;
+    }
+
+    // Entity validation helpers (Pillar 2: Anti-Update-Gap)
+    function isValidUserProfile(data, userId) {
+      return data.userId is string && data.userId == userId && data.userId == request.auth.uid &&
+             data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 80 &&
+             data.wakeWord is string && data.wakeWord.size() >= 2 && data.wakeWord.size() <= 40 &&
+             data.offlineVoicePreferred is bool &&
+             data.autoReadReplies is bool &&
+             data.batteryMode is string && data.batteryMode in ['ECO', 'BALANCED', 'RESPONSIVE'] &&
+             (data.ttsSpeechRate is number) && data.ttsSpeechRate >= 0.5 && data.ttsSpeechRate <= 2.0 &&
+             data.lastDeviceName is string && data.lastDeviceName.size() >= 1 && data.lastDeviceName.size() <= 80 &&
+             (!('lastLocationLabel' in data) || data.lastLocationLabel == null || (data.lastLocationLabel is string && data.lastLocationLabel.size() <= 120)) &&
+             (!('recentTopics' in data) || data.recentTopics == null || (data.recentTopics is list && data.recentTopics.size() <= 10 && (data.recentTopics.size() == 0 || data.recentTopics[0] is string))) &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidAssistantMessage(data, userId) {
+      return data.userId is string && data.userId == userId && data.userId == request.auth.uid &&
+             data.role is string && data.role in ['USER', 'ASSISTANT', 'SYSTEM'] &&
+             data.content is string && data.content.size() >= 1 && data.content.size() <= 8000 &&
+             data.mode is string && data.mode in ['VOICE', 'TEXT', 'VISION', 'OFFLINE', 'AUTOMATION'] &&
+             data.deviceName is string && data.deviceName.size() >= 1 && data.deviceName.size() <= 80 &&
+             (!('locationContext' in data) || data.locationContext == null || (data.locationContext is string && data.locationContext.size() <= 120)) &&
+             (!('visualTag' in data) || data.visualTag == null || (data.visualTag is string && data.visualTag.size() <= 120)) &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidTaskAutomation(data, userId) {
+      return data.userId is string && data.userId == userId && data.userId == request.auth.uid &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 80 &&
+             data.triggerPhrase is string && data.triggerPhrase.size() >= 1 && data.triggerPhrase.size() <= 80 &&
+             data.actionType is string && data.actionType in ['ALARM', 'TIMER', 'WHATSAPP', 'MAPS', 'BRIEFING', 'WEB_SEARCH'] &&
+             data.actionPayload is string && data.actionPayload.size() >= 1 && data.actionPayload.size() <= 500 &&
+             (!('contextHint' in data) || data.contextHint == null || (data.contextHint is string && data.contextHint.size() <= 120)) &&
+             data.enabled is bool &&
+             data.runCount is int && data.runCount >= 0 && data.runCount <= 100000 &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidMessageDraft(data, userId) {
+      return data.userId is string && data.userId == userId && data.userId == request.auth.uid &&
+             data.recipientName is string && data.recipientName.size() >= 1 && data.recipientName.size() <= 80 &&
+             (!('recipientPhone' in data) || data.recipientPhone == null || (data.recipientPhone is string && data.recipientPhone.size() <= 32)) &&
+             data.body is string && data.body.size() >= 1 && data.body.size() <= 4000 &&
+             data.tone is string && data.tone in ['CASUAL', 'PROFESSIONAL', 'WARM', 'CONCISE'] &&
+             data.direction is string && data.direction in ['OUTGOING_DRAFT', 'INCOMING_READER'] &&
+             data.status is string && data.status in ['DRAFT', 'SENT', 'READ'] &&
+             (!('summary' in data) || data.summary == null || (data.summary is string && data.summary.size() <= 1000)) &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidTodoReminder(data, userId) {
+      return data.userId is string && data.userId == userId && data.userId == request.auth.uid &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 160 &&
+             (!('dueLabel' in data) || data.dueLabel == null || (data.dueLabel is string && data.dueLabel.size() <= 60)) &&
+             data.category is string && data.category in ['TASK', 'REMINDER', 'CALENDAR'] &&
+             data.completed is bool &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidSmartHomeDevice(data, userId) {
+      return data.userId is string && data.userId == userId && data.userId == request.auth.uid &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 80 &&
+             data.room is string && data.room.size() >= 1 && data.room.size() <= 60 &&
+             data.deviceType is string && data.deviceType in ['LIGHT', 'LOCK', 'THERMOSTAT', 'VACUUM', 'TV'] &&
+             data.poweredOn is bool &&
+             data.level is int && data.level >= 0 && data.level <= 100 &&
+             data.statusText is string && data.statusText.size() >= 1 && data.statusText.size() <= 80 &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    // 1. User Profile & Synced Assistant Preferences
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow list: if false;
+
+      allow create: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       incoming().keys().hasAll([
+                         'userId', 'displayName', 'wakeWord', 'offlineVoicePreferred',
+                         'autoReadReplies', 'batteryMode', 'ttsSpeechRate', 'lastDeviceName',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'displayName', 'wakeWord', 'offlineVoicePreferred',
+                         'autoReadReplies', 'batteryMode', 'ttsSpeechRate', 'lastDeviceName',
+                         'lastLocationLabel', 'recentTopics', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidUserProfile(incoming(), userId);
+
+      allow update: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       isValidUserProfile(incoming(), userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       (
+                         // Action: Update Preferences & Wake Word
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'displayName', 'wakeWord', 'offlineVoicePreferred',
+                           'autoReadReplies', 'batteryMode', 'ttsSpeechRate',
+                           'lastDeviceName', 'updatedAt'
+                         ]) ||
+                         // Action: Update Contextual Telemetry (Location / Recent Topics)
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'lastDeviceName', 'lastLocationLabel', 'recentTopics', 'updatedAt'
+                         ])
+                       );
+
+      allow delete: if isOwner(userId) && isValidId(userId);
+
+      // 2. Synced Conversation & Visual Query History
+      match /conversations/{messageId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(messageId);
+        allow list: if isOwner(userId) && isValidId(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(userId) &&
+                         isValidId(messageId) &&
+                         incoming().keys().hasAll([
+                           'userId', 'role', 'content', 'mode', 'deviceName', 'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'role', 'content', 'mode', 'deviceName',
+                           'locationContext', 'visualTag', 'createdAt', 'updatedAt'
+                         ]) &&
+                         isValidAssistantMessage(incoming(), userId);
+
+        allow update: if isOwner(userId) &&
+                         isValidId(userId) &&
+                         isValidId(messageId) &&
+                         isValidAssistantMessage(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().role == existing().role &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'content', 'visualTag', 'updatedAt'
+                         ]);
+
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(messageId);
+      }
+
+      // 3. Real-Time Task Automations
+      match /automations/{automationId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(automationId);
+        allow list: if isOwner(userId) && isValidId(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(userId) &&
+                         isValidId(automationId) &&
+                         incoming().keys().hasAll([
+                           'userId', 'title', 'triggerPhrase', 'actionType',
+                           'actionPayload', 'enabled', 'runCount', 'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'title', 'triggerPhrase', 'actionType',
+                           'actionPayload', 'contextHint', 'enabled', 'runCount',
+                           'createdAt', 'updatedAt'
+                         ]) &&
+                         isValidTaskAutomation(incoming(), userId);
+
+        allow update: if isOwner(userId) &&
+                         isValidId(userId) &&
+                         isValidId(automationId) &&
+                         isValidTaskAutomation(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         (
+                           // Action: Toggle Enabled
+                           incoming().diff(existing()).affectedKeys().hasOnly(['enabled', 'updatedAt']) ||
+                           // Action: Record Execution Run
+                           (incoming().runCount == existing().runCount + 1 &&
+                            incoming().diff(existing()).affectedKeys().hasOnly(['runCount', 'updatedAt'])) ||
+                           // Action: Edit Automation Definition
+                           incoming().diff(existing()).affectedKeys().hasOnly([
+                             'title', 'triggerPhrase', 'actionType', 'actionPayload',
+                             'contextHint', 'enabled', 'updatedAt'
+                           ])
+                         );
+
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(automationId);
+      }
+
+      // 4. WhatsApp Drafts & Hands-Free Message Reader
+      match /message_drafts/{draftId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(draftId);
+        allow list: if isOwner(userId) && isValidId(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(userId) &&
+                         isValidId(draftId) &&
+                         incoming().keys().hasAll([
+                           'userId', 'recipientName', 'body', 'tone',
+                           'direction', 'status', 'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'recipientName', 'recipientPhone', 'body',
+                           'tone', 'direction', 'status', 'summary',
+                           'createdAt', 'updatedAt'
+                         ]) &&
+                         isValidMessageDraft(incoming(), userId);
+
+        allow update: if isOwner(userId) &&
+                         isValidId(userId) &&
+                         isValidId(draftId) &&
+                         isValidMessageDraft(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().direction == existing().direction &&
+                         incoming().createdAt == existing().createdAt &&
+                         // Pillar 6: Terminal state lock once marked SENT
+                         existing().status != 'SENT' &&
+                         (
+                           // Action: Edit Draft Body / Tone / Recipient
+                           incoming().diff(existing()).affectedKeys().hasOnly([
+                             'recipientName', 'recipientPhone', 'body', 'tone', 'summary', 'updatedAt'
+                           ]) ||
+                           // Action: Mark Draft Sent or Incoming Read
+                           incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']) ||
+                           // Action: Attach AI Summary & Mark Read
+                           incoming().diff(existing()).affectedKeys().hasOnly(['summary', 'status', 'updatedAt'])
+                         );
+
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(draftId);
+      }
+
+      // 5. Synced To-Do Lists & Reminders
+      match /todos/{todoId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(todoId);
+        allow list: if isOwner(userId) && isValidId(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(userId) &&
+                         isValidId(todoId) &&
+                         incoming().keys().hasAll([
+                           'userId', 'title', 'category', 'completed', 'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'title', 'dueLabel', 'category', 'completed', 'createdAt', 'updatedAt'
+                         ]) &&
+                         isValidTodoReminder(incoming(), userId);
+
+        allow update: if isOwner(userId) &&
+                         isValidId(userId) &&
+                         isValidId(todoId) &&
+                         isValidTodoReminder(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         (
+                           incoming().diff(existing()).affectedKeys().hasOnly(['completed', 'updatedAt']) ||
+                           incoming().diff(existing()).affectedKeys().hasOnly(['title', 'dueLabel', 'category', 'completed', 'updatedAt'])
+                         );
+
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(todoId);
+      }
+
+      // 6. Synced Smart Home Devices
+      match /smart_devices/{deviceId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(deviceId);
+        allow list: if isOwner(userId) && isValidId(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(userId) &&
+                         isValidId(deviceId) &&
+                         incoming().keys().hasAll([
+                           'userId', 'name', 'room', 'deviceType', 'poweredOn', 'level', 'statusText', 'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'name', 'room', 'deviceType', 'poweredOn', 'level', 'statusText', 'createdAt', 'updatedAt'
+                         ]) &&
+                         isValidSmartHomeDevice(incoming(), userId);
+
+        allow update: if isOwner(userId) &&
+                         isValidId(userId) &&
+                         isValidId(deviceId) &&
+                         isValidSmartHomeDevice(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().deviceType == existing().deviceType &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'poweredOn', 'level', 'statusText', 'updatedAt'
+                         ]);
+
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(deviceId);
+      }
+    }
+  }
+}
