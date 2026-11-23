@@ -91,8 +91,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // STEP 1 (MANDATORY): Configure App Check with launch intent before Compose UI or Firebase calls
-        configureAppCheck(this, intent)
+        // STEP 1 (MANDATORY): Configure App Check before Compose UI or Firebase calls
+        configureAppCheck(this)
 
         extractSharedText(intent)
         enableEdgeToEdge()

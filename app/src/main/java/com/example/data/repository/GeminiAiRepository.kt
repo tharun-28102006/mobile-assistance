@@ -404,9 +404,10 @@ class GeminiAiRepository {
                 e.localizedMessage?.contains("token is invalid", ignoreCase = true) == true
             ) {
                 throw IllegalStateException(
-                    "Firebase App Check rejected this debug app. Register debug token " +
-                        "48C9E978-1360-47E8-845D-BA8DB25A53C9 in Firebase Console " +
-                        "under App Check, then reinstall or restart the app."
+                    "Firebase App Check rejected this debug app. Find the SDK-generated debug token " +
+                        "in Android Studio Logcat and register it in Firebase project " +
+                        "gen-lang-client-0441900106 under the Android app " +
+                        "com.aistudio.auraassist.qvmxkr."
                 )
             }
             throw e
